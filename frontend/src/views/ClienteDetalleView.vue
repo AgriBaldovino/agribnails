@@ -171,7 +171,7 @@ import { useClientsStore } from '../stores/clients'
 import { SERVICES } from '../data/services'
 import { formatDate, computeVisitDiscounts } from '../utils/discount'
 import type { ServiceKey } from '../types'
-import { useAuthStore } from '../stores/auth'
+// import { useAuthStore } from '../stores/auth'
 import { usePricesStore } from '../stores/prices'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { app } from '../firebase'
@@ -179,7 +179,7 @@ import { app } from '../firebase'
 const route = useRoute()
 const router = useRouter()
 const store = useClientsStore()
-const auth = useAuthStore()
+// const auth = useAuthStore()
 const isAuthenticated = ref(false)
 onAuthStateChanged(getAuth(app), (u) => {
   isAuthenticated.value = !!u

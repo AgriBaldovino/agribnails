@@ -163,7 +163,6 @@ import { useClientsStore } from '../stores/clients'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { app } from '../firebase'
 import { usePricesStore } from '../stores/prices'
-import { PRICE_REMOVAL } from '../data/prices'
 
 const store = useClientsStore()
 const router = useRouter()
