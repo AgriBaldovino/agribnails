@@ -64,6 +64,8 @@ export const useClientsStore = defineStore('clients', () => {
     console.log('[clientsStore] addVisit: agregando visita', { clientId, visit })
     await updateDoc(ref, { visits: newVisits, updatedAtISO: new Date().toISOString() })
     console.log('[clientsStore] addVisit: OK')
+    // Actualización optimista para reflejar inmediatamente en UI
+    client.visits = newVisits
     return visit
   }
 
@@ -117,6 +119,8 @@ export const useClientsStore = defineStore('clients', () => {
     console.log('[clientsStore] removeVisit: eliminando', { clientId, visitId })
     await updateDoc(ref, { visits: newVisits, updatedAtISO: new Date().toISOString() })
     console.log('[clientsStore] removeVisit: OK')
+    // Actualización optimista
+    c.visits = newVisits
   }
 
   async function updateClient(clientId: string, fields: Partial<Pick<ClientRecord, 'firstName' | 'lastName' | 'dni'>>) {
