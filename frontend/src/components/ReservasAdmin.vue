@@ -163,155 +163,175 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAppointmentsStore } from '../stores/appointments'
 
-defineOptions({
-  name: 'ReservasAdmin'
-})
+export default {
+  name: 'ReservasAdmin',
+  setup() {
+    const appointmentsStore = useAppointmentsStore()
 
-const appointmentsStore = useAppointmentsStore()
+    // Estado local
+    const filtros = ref({
+      dni: '',
+      estado: '',
+      fecha: ''
+    })
 
-// Estado local
-const filtros = ref({
-  dni: '',
-  estado: '',
-  fecha: ''
-})
+    const dialogEliminar = ref(false)
+    const reservaAEliminar = ref<any>(null)
+    const eliminando = ref(false)
 
-const dialogEliminar = ref(false)
-const reservaAEliminar = ref<any>(null)
-const eliminando = ref(false)
+    const snackbar = ref({
+      show: false,
+      message: '',
+      color: 'success'
+    })
 
-const snackbar = ref({
-  show: false,
-  message: '',
-  color: 'success'
-})
+    // Headers de la tabla
+    const headers = [
+      { title: 'DNI', key: 'dni', sortable: true },
+      { title: 'Nombre', key: 'nombreCliente', sortable: true },
+      { title: 'Apellido', key: 'apellidoCliente', sortable: true },
+      { title: 'Fecha', key: 'fecha', sortable: true },
+      { title: 'Hora', key: 'hora', sortable: true },
+      { title: 'Servicio', key: 'servicio', sortable: true },
+      { title: 'Estado', key: 'estado', sortable: true },
+      { title: 'Retirado', key: 'tieneRetirado', sortable: true },
+      { title: 'Tipo Retirado', key: 'tipoRetirado', sortable: true },
+      { title: 'Acciones', key: 'actions', sortable: false }
+    ]
 
-// Headers de la tabla
-const headers = [
-  { title: 'DNI', key: 'dni', sortable: true },
-  { title: 'Nombre', key: 'nombreCliente', sortable: true },
-  { title: 'Apellido', key: 'apellidoCliente', sortable: true },
-  { title: 'Fecha', key: 'fecha', sortable: true },
-  { title: 'Hora', key: 'hora', sortable: true },
-  { title: 'Servicio', key: 'servicio', sortable: true },
-  { title: 'Estado', key: 'estado', sortable: true },
-  { title: 'Retirado', key: 'tieneRetirado', sortable: true },
-  { title: 'Tipo Retirado', key: 'tipoRetirado', sortable: true },
-  { title: 'Acciones', key: 'actions', sortable: false }
-]
+    // Estados disponibles para filtro
+    const estadosDisponibles = [
+      { title: 'Confirmado', value: 'confirmado' },
+      { title: 'Cancelado', value: 'cancelado' },
+      { title: 'Completado', value: 'completado' }
+    ]
 
-// Estados disponibles para filtro
-const estadosDisponibles = [
-  { title: 'Confirmado', value: 'confirmado' },
-  { title: 'Cancelado', value: 'cancelado' },
-  { title: 'Completado', value: 'completado' }
-]
+    // Computed properties
+    const reservas = computed(() => appointmentsStore.reservas)
+    const reservasFiltradas = computed(() => {
+      let filtradas = reservas.value
 
-// Computed properties
-const reservas = computed(() => appointmentsStore.reservas)
-const reservasFiltradas = computed(() => {
-  let filtradas = reservas.value
-
-  if (filtros.value.dni) {
-    filtradas = filtradas.filter(r => 
-      r.dni.toLowerCase().includes(filtros.value.dni.toLowerCase())
-    )
-  }
-
-  if (filtros.value.estado) {
-    filtradas = filtradas.filter(r => r.estado === filtros.value.estado)
-  }
-
-  if (filtros.value.fecha) {
-    filtradas = filtradas.filter(r => r.fecha === filtros.value.fecha)
-  }
-
-  return filtradas
-})
-
-// Métodos
-const formatDate = (date: string) => {
-  if (!date) return ''
-  try {
-    const [year, month, day] = date.split('-')
-    return `${day}/${month}/${year}`
-  } catch {
-    return date
-  }
-}
-
-const getEstadoColor = (estado: string) => {
-  switch (estado) {
-    case 'confirmado': return 'success'
-    case 'cancelado': return 'error'
-    case 'completado': return 'info'
-    default: return 'default'
-  }
-}
-
-const getEstadoText = (estado: string) => {
-  switch (estado) {
-    case 'confirmado': return 'Confirmado'
-    case 'cancelado': return 'Cancelado'
-    case 'completado': return 'Completado'
-    default: return estado
-  }
-}
-
-const limpiarFiltros = () => {
-  filtros.value = {
-    dni: '',
-    estado: '',
-    fecha: ''
-  }
-}
-
-const confirmarEliminar = (reserva: any) => {
-  reservaAEliminar.value = reserva
-  dialogEliminar.value = true
-}
-
-const eliminarReserva = async () => {
-  if (!reservaAEliminar.value) return
-
-  eliminando.value = true
-  try {
-    const resultado = await appointmentsStore.eliminarReserva(reservaAEliminar.value.id)
-    
-    if (resultado.success) {
-      snackbar.value = {
-        show: true,
-        message: resultado.mensaje,
-        color: 'success'
+      if (filtros.value.dni) {
+        filtradas = filtradas.filter(r => 
+          r.dni.toLowerCase().includes(filtros.value.dni.toLowerCase())
+        )
       }
-      dialogEliminar.value = false
-      reservaAEliminar.value = null
-    } else {
-      snackbar.value = {
-        show: true,
-        message: resultado.mensaje,
-        color: 'error'
+
+      if (filtros.value.estado) {
+        filtradas = filtradas.filter(r => r.estado === filtros.value.estado)
+      }
+
+      if (filtros.value.fecha) {
+        filtradas = filtradas.filter(r => r.fecha === filtros.value.fecha)
+      }
+
+      return filtradas
+    })
+
+    // Métodos
+    const formatDate = (date: string) => {
+      if (!date) return ''
+      try {
+        const [year, month, day] = date.split('-')
+        return `${day}/${month}/${year}`
+      } catch {
+        return date
       }
     }
-  } catch (error) {
-    snackbar.value = {
-      show: true,
-      message: 'Error inesperado al eliminar la reserva',
-      color: 'error'
+
+    const getEstadoColor = (estado: string) => {
+      switch (estado) {
+        case 'confirmado': return 'success'
+        case 'cancelado': return 'error'
+        case 'completado': return 'info'
+        default: return 'default'
+      }
     }
-  } finally {
-    eliminando.value = false
+
+    const getEstadoText = (estado: string) => {
+      switch (estado) {
+        case 'confirmado': return 'Confirmado'
+        case 'cancelado': return 'Cancelado'
+        case 'completado': return 'Completado'
+        default: return estado
+      }
+    }
+
+    const limpiarFiltros = () => {
+      filtros.value = {
+        dni: '',
+        estado: '',
+        fecha: ''
+      }
+    }
+
+    const confirmarEliminar = (reserva: any) => {
+      reservaAEliminar.value = reserva
+      dialogEliminar.value = true
+    }
+
+    const eliminarReserva = async () => {
+      if (!reservaAEliminar.value) return
+
+      eliminando.value = true
+      try {
+        const resultado = await appointmentsStore.eliminarReserva(reservaAEliminar.value.id)
+        
+        if (resultado.success) {
+          snackbar.value = {
+            show: true,
+            message: resultado.mensaje,
+            color: 'success'
+          }
+          dialogEliminar.value = false
+          reservaAEliminar.value = null
+        } else {
+          snackbar.value = {
+            show: true,
+            message: resultado.mensaje,
+            color: 'error'
+          }
+        }
+      } catch (error) {
+        snackbar.value = {
+          show: true,
+          message: 'Error inesperado al eliminar la reserva',
+          color: 'error'
+        }
+      } finally {
+        eliminando.value = false
+      }
+    }
+
+    // Inicialización
+    onMounted(() => {
+      appointmentsStore.initSubscription()
+    })
+
+    return {
+      appointmentsStore,
+      filtros,
+      dialogEliminar,
+      reservaAEliminar,
+      eliminando,
+      snackbar,
+      headers,
+      estadosDisponibles,
+      reservas,
+      reservasFiltradas,
+      formatDate,
+      getEstadoColor,
+      getEstadoText,
+      limpiarFiltros,
+      confirmarEliminar,
+      eliminarReserva
+    }
   }
 }
-
-// Inicialización
-onMounted(() => {
-  appointmentsStore.initSubscription()
-})
 </script>
 
 <style scoped>
