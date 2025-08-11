@@ -395,7 +395,8 @@ function getEstadoText(estado: string) {
 }
 
 // Función auxiliar para formatear fechas sin problemas de zona horaria
-function formatDateSafe(fechaString: string) {
+function formatDateSafe(fechaString: string | undefined) {
+  if (!fechaString) return ''
   // Parsear la fecha como YYYY-MM-DD y crear una fecha local
   const [year, month, day] = fechaString.split('-').map(Number)
   // month - 1 porque los meses en Date van de 0-11

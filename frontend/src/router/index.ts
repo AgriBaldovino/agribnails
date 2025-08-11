@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import { getAuth } from 'firebase/auth'
 import { app } from '@/firebase'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory('/'),
@@ -16,24 +17,12 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach(async (to, from, next) => {
-  try {
-    const auth = getAuth(app)
-    
-    // Si la ruta requiere autenticación, verificar el estado actual
-    if (to.meta.requiresAuth) {
-      if (!auth.currentUser) {
-        // Si no hay usuario actual, redirigir al login
-        next({ name: 'login' })
-        return
-      }
-    }
-    
-    // Continuar con la navegación
-    next()
-  } catch (error) {
-    console.error('Router guard error:', error)
-    // En caso de error, permitir la navegación
+router.beforeEach((to, _from, next) => {
+  const authStore = useAuthStore()
+  
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else {
     next()
   }
 })

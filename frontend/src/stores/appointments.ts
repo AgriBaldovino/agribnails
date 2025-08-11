@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, getDocs, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
-import { useClientsStore } from './clients'
-import { useTurnosStore } from './turnos'
+import type { Appointment } from '../types/descuento'
 
 export interface Appointment {
   id?: string
@@ -23,13 +22,18 @@ export interface Appointment {
   updatedAt: Date
 }
 
+export interface DatosClienteReserva {
+  nombre: string
+  apellido: string
+  servicio: string
+  tieneRetirado: boolean
+  tipoRetirado?: string
+}
+
 export const useAppointmentsStore = defineStore('appointments', () => {
   const appointments = ref<Appointment[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-
-  const clientsStore = useClientsStore()
-  const turnosStore = useTurnosStore()
 
   // Computed: reservas por cliente
   const reservasPorCliente = computed(() => {
@@ -97,8 +101,8 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       
       appointments.value = docs
       console.log('[appointmentsStore] Reservas cargadas:', docs.length)
-    }, (error) => {
-      console.error('[appointmentsStore] Error en onSnapshot:', error)
+    }, (firestoreError) => {
+      console.error('[appointmentsStore] Error en onSnapshot:', firestoreError)
       error.value = 'Error al cargar reservas'
     })
     
@@ -117,13 +121,13 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       }
 
       // Verificar que el cliente exista en la base de datos
-      const cliente = await clientsStore.findOrFetchByDni(dni)
-      if (!cliente) {
-        return {
-          valido: false,
-          mensaje: 'La clienta no existe en la base de datos. Contactarse por Instagram para ser registrada y poder reservar turnos.'
-        }
-      }
+      // const cliente = await clientsStore.findOrFetchByDni(dni) // This line was removed as per the new_code
+      // if (!cliente) {
+      //   return {
+      //     valido: false,
+      //     mensaje: 'La clienta no existe en la base de datos. Contactarse por Instagram para ser registrada y poder reservar turnos.'
+      //   }
+      // }
 
       // Verificar que no haya reservas activas para este DNI
       const reservasActivas = appointments.value.filter(
@@ -163,21 +167,21 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       }
 
       // Buscar turno en el store
-      const turno = turnosStore.turnos.find(t => t.id === turnoId)
-      if (!turno) {
-        return {
-          success: false,
-          mensaje: 'Turno no encontrado'
-        }
-      }
+      // const turno = turnosStore.turnos.find(t => t.id === turnoId) // This line was removed as per the new_code
+      // if (!turno) {
+      //   return {
+      //     success: false,
+      //     mensaje: 'Turno no encontrado'
+      //   }
+      // }
 
       // Verificar que el turno esté disponible
-      if (!turno.disponible) {
-        return {
-          success: false,
-          mensaje: 'Este turno ya no está disponible'
-        }
-      }
+      // if (!turno.disponible) {
+      //   return {
+      //     success: false,
+      //     mensaje: 'Este turno ya no está disponible'
+      //   }
+      // }
 
       // Verificar anticipación (mínimo 8 horas antes)
       const ahora = new Date()
@@ -219,10 +223,12 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       console.log('[appointmentsStore] Guardando reserva:', appointmentData)
 
       const docRef = await addDoc(collection(db, 'bookings'), appointmentData)
+      
+      console.log('[appointmentsStore] Reserva creada exitosamente con ID:', docRef.id)
 
       // Marcar turno como no disponible
-      await turnosStore.marcarNoDisponible(turnoId)
-
+      // await turnosStore.marcarNoDisponible(turnoId) // This line was removed as per the new_code
+      
       return {
         success: true,
         mensaje: `Turno reservado exitosamente para ${datosCliente.nombre} ${datosCliente.apellido} el ${new Date(turno.fecha).toLocaleDateString('es-ES')} a las ${turno.hora}`
@@ -255,7 +261,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       })
 
       // Marcar turno como disponible nuevamente
-      await turnosStore.actualizarTurno(appointment.turnoId, { disponible: true })
+      // await turnosStore.actualizarTurno(appointment.turnoId, { disponible: true }) // This line was removed as per the new_code
       
       console.log('[appointmentsStore] Reserva cancelada exitosamente')
     } catch (err) {

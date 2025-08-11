@@ -373,46 +373,4 @@ const mostrarMensaje = (mensaje: string, color: 'success' | 'error' | 'info') =>
   snackbarColor.value = color
   showSnackbar.value = true
 }
-
-const mostrarEstadoCompleto = () => {
-  console.log('=== ESTADO COMPLETO DEL FORMULARIO ===')
-  console.log('Nuevo Turno:', nuevoTurno.value)
-  console.log('Fecha actual:', nuevoTurno.value.fecha, 'Tipo:', typeof nuevoTurno.value.fecha)
-  console.log('Hora actual:', nuevoTurno.value.hora, 'Tipo:', typeof nuevoTurno.value.hora)
-  console.log('Fecha válida:', !!nuevoTurno.value.fecha)
-  console.log('Hora válida:', !!nuevoTurno.value.hora)
-  console.log('Formulario válido:', formValid.value)
-  console.log('=== FIN ESTADO COMPLETO ===')
-}
-
-const verificarSuscripcion = () => {
-  console.log('=== VERIFICANDO ESTADO DE SUSCRIPCIÓN Y TURNOS ===')
-  console.log('Turnos en el store:', turnosStore.turnos.length)
-  console.log('Turnos actuales:', turnosStore.turnos)
-  console.log('Loading state:', turnosStore.loading)
-  console.log('Error state:', turnosStore.error)
-  console.log('=== FIN VERIFICACIÓN ===')
-}
-
-const verificarColeccion = async () => {
-  try {
-    console.log('=== VERIFICANDO COLECCIÓN DE TURNOS ===')
-    console.log('Intentando acceder a la colección: slots')
-    
-    // Importar las funciones de Firestore dinámicamente
-    const { collection, getDocs } = await import('firebase/firestore')
-    const { db } = await import('../firebase')
-    
-    const querySnapshot = await getDocs(collection(db, 'slots'))
-    console.log('Colección accesible, documentos encontrados:', querySnapshot.size)
-    
-    querySnapshot.forEach((doc) => {
-      console.log('Documento existente:', doc.id, doc.data())
-    })
-    
-    console.log('=== FIN VERIFICACIÓN DE COLECCIÓN ===')
-  } catch (error) {
-    console.error('Error al verificar colección:', error)
-  }
-}
 </script>

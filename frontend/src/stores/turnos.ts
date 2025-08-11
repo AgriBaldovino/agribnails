@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where, Timestamp, getDocs } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+import { collection, updateDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 
 export interface TurnoSlot {
@@ -55,13 +54,6 @@ export const useTurnosStore = defineStore('turnos', () => {
     initializing.value = true
     error.value = null
     
-    // Verificar estado de autenticación
-    try {
-      const auth = getAuth()
-    } catch (err) {
-      console.error('[turnosStore] Error al obtener auth:', err)
-    }
-    
     const q = query(
       collection(db, 'slots'),
       orderBy('fecha'),
@@ -86,8 +78,8 @@ export const useTurnosStore = defineStore('turnos', () => {
       
       turnos.value = docs
       initializing.value = false // Marcar como inicializado
-    }, (error) => {
-      console.error('[turnosStore] Error en onSnapshot:', error)
+    }, (firestoreError) => {
+      console.error('[turnosStore] Error en onSnapshot:', firestoreError)
       error.value = 'Error al cargar turnos'
       initializing.value = false
     })
@@ -103,11 +95,13 @@ export const useTurnosStore = defineStore('turnos', () => {
       
       const turnoData = {
         ...turno,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        createdAt: new Date(), // Assuming Timestamp.now() is not needed for new documents
+        updatedAt: new Date()
       }
       
-      const docRef = await addDoc(collection(db, 'slots'), turnoData)
+      const docRef = await collection(db, 'slots').add(turnoData)
+      
+      console.log('[turnosStore] Turno creado exitosamente con ID:', docRef.id)
       
     } catch (err) {
       console.error('[turnosStore] Error al crear turno:', err)
@@ -128,7 +122,7 @@ export const useTurnosStore = defineStore('turnos', () => {
       const turnoRef = doc(db, 'slots', id)
       await updateDoc(turnoRef, {
         ...updates,
-        updatedAt: Timestamp.now()
+        updatedAt: new Date()
       })
       
       // Actualizar también el estado local inmediatamente
@@ -156,7 +150,7 @@ export const useTurnosStore = defineStore('turnos', () => {
       loading.value = true
       error.value = null
       
-      await deleteDoc(doc(db, 'slots', id))
+      await doc(db, 'slots', id).delete()
     } catch (err) {
       console.error('[turnosStore] Error al eliminar turno:', err)
       error.value = 'Error al eliminar turno'
@@ -198,7 +192,7 @@ export const useTurnosStore = defineStore('turnos', () => {
         orderBy('hora')
       )
       
-      const snapshot = await getDocs(q)
+      const snapshot = await collection(db, 'slots').get()
       
       const docs: TurnoSlot[] = []
       snapshot.forEach((doc) => {

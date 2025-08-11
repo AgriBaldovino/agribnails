@@ -256,7 +256,7 @@ export default {
       resetForm,
       cerrarModal,
       reservarTurno,
-      formatDate
+      formatDate: (fecha: string | undefined) => fecha ? formatDate(fecha) : ''
     }
   }
 }
