@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useTurnosStore } from './turnos'
 
 export interface Appointment {
   id?: string
@@ -156,6 +157,8 @@ export const useAppointmentsStore = defineStore('appointments', () => {
   // Crear nueva reserva
   const crearReserva = async (dni: string, turnoId: string, datosCliente: DatosClienteReserva, turnoData: { fecha: string; hora: string }) => {
     try {
+      const turnosStore = useTurnosStore()
+      
       // Validar DNI
       const validacion = await validarDNI(dni)
       if (!validacion.valido) {
@@ -226,7 +229,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       console.log('[appointmentsStore] Reserva creada exitosamente con ID:', docRef.id)
 
       // Marcar turno como no disponible
-      // await turnosStore.marcarNoDisponible(turnoId) // This line was removed as per the new_code
+      await turnosStore.marcarNoDisponible(turnoId)
       
       return {
         success: true,
@@ -248,6 +251,8 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       loading.value = true
       error.value = null
       
+      const turnosStore = useTurnosStore()
+      
       const appointment = appointments.value.find(a => a.id === id)
       if (!appointment) {
         throw new Error('Reserva no encontrada')
@@ -260,7 +265,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       })
 
       // Marcar turno como disponible nuevamente
-      // await turnosStore.actualizarTurno(appointment.turnoId, { disponible: true }) // This line was removed as per the new_code
+      await turnosStore.actualizarTurno(appointment.turnoId, { disponible: true })
       
       console.log('[appointmentsStore] Reserva cancelada exitosamente')
     } catch (err) {

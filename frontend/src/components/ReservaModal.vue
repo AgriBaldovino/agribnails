@@ -207,6 +207,11 @@ export default {
         loading.value = true
         error.value = ''
         
+        if (!props.turno.id) {
+          error.value = 'Error: ID del turno no válido'
+          return
+        }
+
         const resultado = await appointmentsStore.crearReserva(
           dni.value,
           props.turno.id,
