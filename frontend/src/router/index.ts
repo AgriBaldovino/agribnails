@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import { getAuth } from 'firebase/auth'
-import { app } from '@/firebase'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({

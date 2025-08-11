@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { collection, updateDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 
 export interface TurnoSlot {
@@ -99,7 +99,7 @@ export const useTurnosStore = defineStore('turnos', () => {
         updatedAt: new Date()
       }
       
-      const docRef = await collection(db, 'slots').add(turnoData)
+      const docRef = await addDoc(collection(db, 'slots'), turnoData)
       
       console.log('[turnosStore] Turno creado exitosamente con ID:', docRef.id)
       
@@ -150,7 +150,7 @@ export const useTurnosStore = defineStore('turnos', () => {
       loading.value = true
       error.value = null
       
-      await doc(db, 'slots', id).delete()
+      await deleteDoc(doc(db, 'slots', id))
     } catch (err) {
       console.error('[turnosStore] Error al eliminar turno:', err)
       error.value = 'Error al eliminar turno'

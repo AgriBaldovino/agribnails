@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, getDocs, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
-import type { Appointment } from '../types/descuento'
 
 export interface Appointment {
   id?: string
@@ -155,7 +154,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
   }
 
   // Crear nueva reserva
-  const crearReserva = async (dni: string, turnoId: string, datosCliente: DatosClienteReserva) => {
+  const crearReserva = async (dni: string, turnoId: string, datosCliente: DatosClienteReserva, turnoData: { fecha: string; hora: string }) => {
     try {
       // Validar DNI
       const validacion = await validarDNI(dni)
@@ -186,13 +185,13 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       // Verificar anticipación (mínimo 8 horas antes)
       const ahora = new Date()
       // Combinar fecha y hora del turno para el cálculo correcto
-      const turnoDateTime = new Date(turno.fecha + 'T' + turno.hora)
+      const turnoDateTime = new Date(turnoData.fecha + 'T' + turnoData.hora)
       const horasAnticipacion = (turnoDateTime.getTime() - ahora.getTime()) / (1000 * 60 * 60)
       
       console.log('[appointmentsStore] Cálculo de anticipación:', {
         ahora: ahora.toISOString(),
-        turnoFecha: turno.fecha,
-        turnoHora: turno.hora,
+        turnoFecha: turnoData.fecha,
+        turnoHora: turnoData.hora,
         turnoDateTime: turnoDateTime.toISOString(),
         horasAnticipacion: horasAnticipacion
       })
@@ -208,8 +207,8 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       const appointmentData = {
         dni,
         turnoId,
-        fecha: turno.fecha,
-        hora: turno.hora,
+        fecha: turnoData.fecha,
+        hora: turnoData.hora,
         servicio: datosCliente.servicio,
         nombreCliente: datosCliente.nombre,
         apellidoCliente: datosCliente.apellido,
@@ -231,7 +230,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       
       return {
         success: true,
-        mensaje: `Turno reservado exitosamente para ${datosCliente.nombre} ${datosCliente.apellido} el ${new Date(turno.fecha).toLocaleDateString('es-ES')} a las ${turno.hora}`
+        mensaje: `Turno reservado exitosamente para ${datosCliente.nombre} ${datosCliente.apellido} el ${new Date(turnoData.fecha).toLocaleDateString('es-ES')} a las ${turnoData.hora}`
       }
     } catch (err) {
       console.error('Error al crear reserva:', err)

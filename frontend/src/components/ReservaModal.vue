@@ -216,6 +216,10 @@ export default {
             servicio: servicio.value,
             tieneRetirado: tieneRetirado.value,
             tipoRetirado: tipoRetirado.value
+          },
+          {
+            fecha: props.turno.fecha,
+            hora: props.turno.hora
           }
         )
 
@@ -256,7 +260,7 @@ export default {
       resetForm,
       cerrarModal,
       reservarTurno,
-      formatDate: (fecha: string | undefined) => fecha ? formatDate(fecha) : ''
+      formatDate
     }
   }
 }
