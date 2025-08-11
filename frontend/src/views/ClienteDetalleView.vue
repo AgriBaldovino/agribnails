@@ -135,7 +135,7 @@
                     <v-btn
                       color="warning"
                       variant="outlined"
-                      @click="cancelarReserva(reservaActual.id)"
+                      @click="reservaActual.id ? cancelarReserva(reservaActual.id) : null"
                       prepend-icon="mdi-close"
                     >
                       Cancelar Reserva
@@ -368,13 +368,7 @@ const reservaActual = computed(() => {
   return reserva
 })
 
-const reservasHeaders = [
-  { title: 'Fecha', key: 'fecha', sortable: true },
-  { title: 'Hora', key: 'hora', sortable: true },
-  { title: 'Servicio', key: 'servicio', sortable: true },
-  { title: 'Estado', key: 'estado', sortable: true },
-  { title: 'Acciones', key: 'actions', sortable: false }
-]
+
 
 function getEstadoColor(estado: string) {
   switch (estado) {

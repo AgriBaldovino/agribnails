@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 
 export interface TurnoSlot {
@@ -192,13 +192,13 @@ export const useTurnosStore = defineStore('turnos', () => {
         orderBy('hora')
       )
       
-      const snapshot = await collection(db, 'slots').get()
+      const snapshot = await getDocs(q)
       
       const docs: TurnoSlot[] = []
-      snapshot.forEach((doc) => {
-        const data = doc.data()
+      snapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data()
         docs.push({
-          id: doc.id,
+          id: docSnapshot.id,
           fecha: data.fecha,
           hora: data.hora,
           tipo: data.tipo,

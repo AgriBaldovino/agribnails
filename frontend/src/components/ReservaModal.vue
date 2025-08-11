@@ -9,7 +9,7 @@
         <div v-if="turno" class="mb-4">
           <v-alert type="info" variant="tonal">
             <strong>Turno seleccionado:</strong><br>
-            {{ formatDate(turno.fecha) }} a las {{ turno.hora }}<br>
+            {{ turno.fecha ? formatDate(turno.fecha) : '' }} a las {{ turno.hora }}<br>
             {{ turno.tipo === 'con_retirado' ? 'Incluye retirado' : 'Sin retirado' }} ({{ turno.duracion }} min)
           </v-alert>
         </div>
