@@ -38,7 +38,10 @@ async function doLogin() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push('/clientes')
+    // Esperar un momento para que el estado de auth se actualice
+    await new Promise(resolve => setTimeout(resolve, 100))
+    // Usar router.push para navegación programática
+    await router.push('/clientes')
   } catch (e: any) {
     error.value = e?.message || 'Error de autenticación'
   } finally {

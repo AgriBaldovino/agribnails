@@ -15,10 +15,30 @@
       <v-col cols="12" md="6">
         <h2 class="text-h4">Clientas</h2>
       </v-col>
-      <v-col cols="12" md="6" class="text-right">
+      <v-col cols="12" md="6" class="text-right d-flex align-center justify-end">
+        <v-btn
+          :to="{ name: 'admin-turnos' }"
+          color="primary"
+          size="default"
+          prepend-icon="mdi-calendar-plus"
+          class="mr-2"
+          variant="flat"
+        >
+          Administrar Turnos
+        </v-btn>
+        <v-btn
+          :to="{ name: 'admin-reservas' }"
+          color="secondary"
+          size="default"
+          prepend-icon="mdi-calendar-check"
+          class="mr-2"
+          variant="flat"
+        >
+          Gestión de Reservas
+        </v-btn>
         <v-dialog v-model="showNew" max-width="500">
           <template #activator="{ props }">
-            <v-btn color="primary" v-bind="props">Nueva clienta</v-btn>
+            <v-btn color="primary" size="default" variant="flat" v-bind="props" class="mr-2">Nueva clienta</v-btn>
           </template>
           <v-card>
             <v-card-title>Nueva clienta</v-card-title>
@@ -38,7 +58,7 @@
         </v-dialog>
         <v-dialog v-model="showPrices" max-width="1200">
           <template #activator="{ props }">
-            <v-btn class="ml-2" variant="outlined" color="primary" v-bind="props">Editar precios</v-btn>
+            <v-btn size="default" variant="outlined" color="primary" v-bind="props">Editar precios</v-btn>
           </template>
           <v-card>
             <v-card-title class="d-flex align-center">
@@ -132,7 +152,30 @@
       </v-col>
     </v-row>
 
-    <v-row>
+    <!-- Skeleton Loader -->
+    <v-row v-if="store.loading.initial">
+      <v-col cols="12" md="6" v-for="n in 6" :key="`skeleton-${n}`">
+        <v-card
+          class="mb-4 client-card skeleton-card"
+          rounded="lg"
+          elevation="1"
+          variant="outlined"
+        >
+          <v-card-title class="pb-2">
+            <v-skeleton-loader type="text" width="70%" height="24" />
+          </v-card-title>
+          <v-card-subtitle class="pb-2">
+            <v-skeleton-loader type="text" width="50%" height="20" />
+          </v-card-subtitle>
+          <v-card-text class="pt-0">
+            <v-skeleton-loader type="chip" width="90px" height="28" />
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Clientes reales -->
+    <v-row v-else>
       <v-col cols="12" md="6" v-for="c in filteredClients" :key="c.id">
         <v-card
           class="mb-4 client-card"
@@ -150,6 +193,19 @@
           <v-card-text>
             <v-chip color="primary" variant="flat" size="small">{{ c.visits.length }} turnos</v-chip>
           </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Mensaje cuando no hay clientas -->
+    <v-row v-if="!store.loading && filteredClients.length === 0">
+      <v-col cols="12" class="text-center">
+        <v-card class="pa-8" variant="outlined">
+          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-account-group-outline</v-icon>
+          <h3 class="text-h6 text-grey-darken-1 mb-2">No se encontraron clientas</h3>
+          <p class="text-body-2 text-grey-medium-emphasis">
+            {{ searchQuery ? 'No hay clientas que coincidan con tu búsqueda.' : 'Aún no hay clientas registradas.' }}
+          </p>
         </v-card>
       </v-col>
     </v-row>

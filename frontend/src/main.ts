@@ -9,6 +9,10 @@ import 'vuetify/styles'
 import App from './App.vue'
 import router from './router'
 
+// Importar stores para inicialización
+import './stores/turnos'
+import './stores/appointments'
+
 const vuetify = createVuetify({
   components,
   directives,
@@ -35,8 +39,19 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 
+// Configurar Pinia primero
 app.use(createPinia())
+
+// Configurar router
 app.use(router)
+
+// Configurar Vuetify
 app.use(vuetify)
 
+// Manejar errores de navegación
+router.onError((error) => {
+  console.error('Router error:', error)
+})
+
+// Montar la aplicación
 app.mount('#app') 

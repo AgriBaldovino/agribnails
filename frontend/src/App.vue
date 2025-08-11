@@ -4,10 +4,11 @@
       <v-app-bar-title>agribnails</v-app-bar-title>
       <v-spacer></v-spacer>
       <v-btn :to="{ name: 'home' }" variant="text">Inicio</v-btn>
-      <v-btn :to="{ name: 'clientes' }" variant="text" v-if="isAuthenticated">Admin</v-btn>
-      <v-btn :to="{ name: 'login' }" variant="text" v-if="!isAuthenticated">Ingresar</v-btn>
+      <v-btn :to="{ name: 'turnos' }" variant="text">Sacar Turno</v-btn>
+      <v-btn :to="{ name: 'clientes' }" variant="text" v-if="auth.isAuthenticated">Admin</v-btn>
+      <v-btn :to="{ name: 'login' }" variant="text" v-if="!auth.isAuthenticated">Ingresar</v-btn>
       <v-btn
-        v-if="isAuthenticated"
+        v-if="auth.isAuthenticated"
         color="secondary"
         variant="flat"
         class="ml-2"
@@ -43,23 +44,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { app } from './firebase'
+
 const auth = useAuthStore()
 const router = useRouter()
-const isAuthenticated = ref(false)
-onMounted(() => {
-  onAuthStateChanged(getAuth(app), (u) => {
-    isAuthenticated.value = !!u
-    console.log('[App] onAuthStateChanged isAuthenticated =', isAuthenticated.value)
-  })
-})
+
 const logout = async () => {
   await auth.logout()
-  router.push({ name: 'home' })
+  // Usar router.push para navegación programática
+  await router.push({ name: 'home' })
 }
 </script>
 

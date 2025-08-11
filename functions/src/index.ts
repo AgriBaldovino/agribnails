@@ -73,6 +73,64 @@ app.delete('/api/clients/:id/visits/:visitId', async (req, res) => {
   res.json({ success: true })
 })
 
+// Función para crear índices de Firestore
+app.post('/api/setup-indexes', async (_req, res) => {
+  try {
+    console.log('Iniciando creación de índices...')
+    
+    // Crear índice para slots (fecha + hora)
+    const slotsIndex = {
+      collectionGroup: 'slots',
+      queryScope: 'COLLECTION',
+      fields: [
+        { fieldPath: 'fecha', order: 'ASCENDING' },
+        { fieldPath: 'hora', order: 'ASCENDING' }
+      ]
+    }
+    
+    // Crear índice para bookings (fecha + hora)
+    const bookingsIndex = {
+      collectionGroup: 'bookings',
+      queryScope: 'COLLECTION',
+      fields: [
+        { fieldPath: 'fecha', order: 'ASCENDING' },
+        { fieldPath: 'hora', order: 'ASCENDING' }
+      ]
+    }
+    
+    // Crear los índices usando la API de Firestore
+    const [slotsResult] = await db.collection('slots').createIndex(slotsIndex)
+    const [bookingsResult] = await db.collection('bookings').createIndex(bookingsIndex)
+    
+    console.log('Índices creados exitosamente:', { slotsResult, bookingsResult })
+    
+    res.json({ 
+      success: true, 
+      message: 'Índices creados exitosamente',
+      slotsIndex: slotsResult,
+      bookingsIndex: bookingsResult
+    })
+    
+  } catch (error: any) {
+    console.error('Error al crear índices:', error)
+    
+    // Si el índice ya existe, no es un error
+    if (error.code === 10) { // ALREADY_EXISTS
+      res.json({ 
+        success: true, 
+        message: 'Los índices ya existen',
+        error: error.message
+      })
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        error: 'Error al crear índices',
+        details: error.message
+      })
+    }
+  }
+})
+
 // Health
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'OK', env: 'functions' })

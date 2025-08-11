@@ -20,6 +20,11 @@
               <v-btn icon="mdi-delete" variant="text" color="error" @click="confirmDelete = true" />
             </template>
             <v-btn icon="mdi-currency-usd" variant="text" @click="showPrices = true" />
+            <v-tooltip text="Ver mi reserva" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn icon="mdi-calendar-check" variant="text" v-bind="props" @click="showReservas = true" />
+              </template>
+            </v-tooltip>
           </v-card-title>
           <v-card-text>
             <template v-if="!isEditing">
@@ -78,6 +83,66 @@
                   </v-list>
                 </v-col>
               </v-row>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+
+        <!-- Modal de reservas de la clienta -->
+        <v-dialog v-model="showReservas" max-width="900">
+          <v-card>
+            <v-card-title class="d-flex align-center">
+              <v-icon class="mr-2">mdi-calendar-check</v-icon>
+              Mi Reserva - {{ client.firstName }} {{ client.lastName }}
+              <v-spacer />
+              <v-btn icon="mdi-close" variant="text" @click="showReservas = false" />
+            </v-card-title>
+            
+            <v-card-text>
+              
+              
+              <div v-if="!reservaActual" class="text-center pa-4">
+                <v-icon size="48" color="grey">mdi-calendar-remove</v-icon>
+                <p class="text-h6 text-grey mt-2">No tienes reservas activas</p>
+              </div>
+              <div v-else class="pa-4">
+                <v-card variant="outlined" class="mb-4">
+                  <v-card-title class="text-h6">
+                    <v-icon color="success" class="mr-2">mdi-calendar-check</v-icon>
+                    Tu próxima reserva
+                  </v-card-title>
+                  <v-card-text>
+                    <v-row>
+                      <v-col cols="6">
+                        <strong>Fecha:</strong> {{ formatDateSafe(reservaActual.fecha) }}
+                      </v-col>
+                      <v-col cols="6">
+                        <strong>Hora:</strong> {{ reservaActual.hora }}
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="6">
+                        <strong>Servicio:</strong> {{ reservaActual.servicio }}
+                      </v-col>
+                      <v-col cols="6">
+                        <strong>Estado:</strong>
+                        <v-chip :color="getEstadoColor(reservaActual.estado)" size="small" class="ml-2">
+                          {{ getEstadoText(reservaActual.estado) }}
+                        </v-chip>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                  <v-card-actions>
+                    <v-btn
+                      color="warning"
+                      variant="outlined"
+                      @click="cancelarReserva(reservaActual.id)"
+                      prepend-icon="mdi-close"
+                    >
+                      Cancelar Reserva
+                    </v-btn>
+                  </v-card-actions>
+                </v-card>
+              </div>
             </v-card-text>
           </v-card>
         </v-dialog>
@@ -168,6 +233,7 @@
 import { computed, ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClientsStore } from '../stores/clients'
+import { useAppointmentsStore } from '../stores/appointments'
 import { SERVICES } from '../data/services'
 import { formatDate, computeVisitDiscounts } from '../utils/discount'
 import type { ServiceKey } from '../types'
@@ -179,6 +245,7 @@ import { app } from '../firebase'
 const route = useRoute()
 const router = useRouter()
 const store = useClientsStore()
+const appointmentsStore = useAppointmentsStore()
 // const auth = useAuthStore()
 const isAuthenticated = ref(false)
 onAuthStateChanged(getAuth(app), (u) => {
@@ -193,6 +260,8 @@ watchEffect(async () => {
     const fetched = await store.fetchById(clientId)
     client.value = fetched
   }
+  // Inicializar el store de appointments para cargar las reservas
+  appointmentsStore.initSubscription()
 })
 
 const status = computed(() => store.getDiscountStatus(clientId) || {
@@ -253,6 +322,7 @@ const error = ref('')
 const confirmDelete = ref(false)
 const isEditing = ref(false)
 const showPrices = ref(false)
+const showReservas = ref(false)
 const pricesStore = usePricesStore()
 const prices = pricesStore.state
 
@@ -265,6 +335,80 @@ function formatRemoval(label: string) {
   const m = label.match(/^([^()]+)\s*\(([^)]+)\)\s*$/)
   if (!m) return { title: label, detail: '' }
   return { title: m[1].trim(), detail: `(${m[2].trim()})` }
+}
+
+// Funciones para manejar reservas
+const reservaActual = computed(() => {
+  if (!client.value) return null
+  const dni = client.value.dni
+  const reservas = appointmentsStore.reservasPorCliente[dni] || []
+  
+  const reserva = reservas
+    .filter(r => r.estado === 'confirmado')
+    .filter(r => {
+      const appointmentDate = new Date(r.fecha + 'T' + r.hora)
+      return appointmentDate > new Date()
+    })
+    .sort((a, b) => {
+      if (a.fecha !== b.fecha) {
+        return a.fecha.localeCompare(b.fecha)
+      }
+      return a.hora.localeCompare(b.hora)
+    })[0] // Solo la primera (más próxima)
+  
+  // Logs temporales para diagnosticar el problema de fecha
+  if (reserva) {
+    console.log('[ClienteDetalle] reservaActual.fecha (string):', reserva.fecha)
+    console.log('[ClienteDetalle] new Date(reserva.fecha):', new Date(reserva.fecha))
+    console.log('[ClienteDetalle] new Date(reserva.fecha).toLocaleDateString():', new Date(reserva.fecha).toLocaleDateString('es-ES'))
+    console.log('[ClienteDetalle] new Date(reserva.fecha).getTime():', new Date(reserva.fecha).getTime())
+    console.log('[ClienteDetalle] new Date().getTimezoneOffset():', new Date().getTimezoneOffset())
+  }
+  
+  return reserva
+})
+
+const reservasHeaders = [
+  { title: 'Fecha', key: 'fecha', sortable: true },
+  { title: 'Hora', key: 'hora', sortable: true },
+  { title: 'Servicio', key: 'servicio', sortable: true },
+  { title: 'Estado', key: 'estado', sortable: true },
+  { title: 'Acciones', key: 'actions', sortable: false }
+]
+
+function getEstadoColor(estado: string) {
+  switch (estado) {
+    case 'confirmado': return 'success'
+    case 'cancelado': return 'error'
+    case 'completado': return 'info'
+    default: return 'default'
+  }
+}
+
+function getEstadoText(estado: string) {
+  switch (estado) {
+    case 'confirmado': return 'Confirmado'
+    case 'cancelado': return 'Cancelado'
+    case 'completado': return 'Completado'
+    default: return estado
+  }
+}
+
+// Función auxiliar para formatear fechas sin problemas de zona horaria
+function formatDateSafe(fechaString: string) {
+  // Parsear la fecha como YYYY-MM-DD y crear una fecha local
+  const [year, month, day] = fechaString.split('-').map(Number)
+  // month - 1 porque los meses en Date van de 0-11
+  const fecha = new Date(year, month - 1, day)
+  return fecha.toLocaleDateString('es-ES')
+}
+
+async function cancelarReserva(reservaId: string) {
+  try {
+    await appointmentsStore.cancelarReserva(reservaId)
+  } catch (error) {
+    console.error('Error al cancelar reserva:', error)
+  }
 }
 
 async function saveClient() {

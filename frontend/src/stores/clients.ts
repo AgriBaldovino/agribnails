@@ -9,6 +9,7 @@ const CLIENTS_COLLECTION = 'clients'
 
 export const useClientsStore = defineStore('clients', () => {
   const clients = reactive<ClientRecord[]>([])
+  const loading = reactive({ initial: true, upsert: false, addVisit: false, delete: false })
 
   // Suscripción en tiempo real a Firestore (no necesitamos guardar el unsub aquí)
   console.log('[clientsStore] onSnapshot: inicializando suscripción...')
@@ -19,9 +20,11 @@ export const useClientsStore = defineStore('clients', () => {
       const loaded: ClientRecord[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<ClientRecord, 'id'>) }))
       clients.splice(0, clients.length, ...loaded.sort((a, b) => a.lastName.localeCompare(b.lastName)))
       console.log('[clientsStore] onSnapshot: clients en memoria =', clients.length)
+      loading.initial = false
     },
     (err) => {
       console.error('[clientsStore] onSnapshot: error', err)
+      loading.initial = false
     }
   )
 
@@ -33,6 +36,7 @@ export const useClientsStore = defineStore('clients', () => {
     )
     if (existing) return existing
 
+    loading.upsert = true
     const now = new Date().toISOString()
     const payload = {
       firstName: firstName.trim(),
@@ -52,21 +56,29 @@ export const useClientsStore = defineStore('clients', () => {
     } catch (e) {
       console.error('[clientsStore] upsertClient: error', e)
       throw e
+    } finally {
+      loading.upsert = false
     }
   }
 
   async function addVisit(clientId: string, dateISO: string, serviceKey: ServiceKey): Promise<VisitRecord | null> {
     const client = clients.find(c => c.id === clientId)
     if (!client) return null
+    
+    loading.addVisit = true
     const visit: VisitRecord = { id: uid(), dateISO, serviceKey }
     const newVisits = [...client.visits, visit]
     const ref = doc(db, CLIENTS_COLLECTION, clientId)
     console.log('[clientsStore] addVisit: agregando visita', { clientId, visit })
-    await updateDoc(ref, { visits: newVisits, updatedAtISO: new Date().toISOString() })
-    console.log('[clientsStore] addVisit: OK')
-    // Actualización optimista para reflejar inmediatamente en UI
-    client.visits = newVisits
-    return visit
+    try {
+      await updateDoc(ref, { visits: newVisits, updatedAtISO: new Date().toISOString() })
+      console.log('[clientsStore] addVisit: OK')
+      // Actualización optimista para reflejar inmediatamente en UI
+      client.visits = newVisits
+      return visit
+    } finally {
+      loading.addVisit = false
+    }
   }
 
   function getClientById(clientId: string) {
@@ -137,14 +149,20 @@ export const useClientsStore = defineStore('clients', () => {
   }
 
   async function deleteClient(clientId: string) {
-    await deleteDoc(doc(db, CLIENTS_COLLECTION, clientId))
-    const idx = clients.findIndex(c => c.id === clientId)
-    if (idx !== -1) clients.splice(idx, 1)
+    loading.delete = true
+    try {
+      await deleteDoc(doc(db, CLIENTS_COLLECTION, clientId))
+      const idx = clients.findIndex(c => c.id === clientId)
+      if (idx !== -1) clients.splice(idx, 1)
+    } finally {
+      loading.delete = false
+    }
   }
 
   return {
     clients,
     sortedClients,
+    loading,
     upsertClient,
     addVisit,
     getClientById,

@@ -6,28 +6,42 @@ import { app } from '../firebase'
 const auth = getAuth(app)
 
 export const useAuthStore = defineStore('auth', () => {
-  const currentUser = ref<User | null>(auth.currentUser)
+  const currentUser = ref<User | null>(null)
+  const isInitialized = ref(false)
 
-  onAuthStateChanged(auth, (u) => {
-    currentUser.value = u
+  // Solo un listener de auth state para evitar conflictos
+  onAuthStateChanged(auth, (user) => {
+    currentUser.value = user
+    isInitialized.value = true
   })
 
   const isAuthenticated = computed(() => !!currentUser.value)
   const email = computed(() => currentUser.value?.email || '')
 
   async function login(email: string, password: string) {
-    // Forzar persistencia local para que la sesión se mantenga y los guards vean el estado
-    await setPersistence(auth, browserLocalPersistence)
-    await signInWithEmailAndPassword(auth, email, password)
+    try {
+      // Forzar persistencia local para que la sesión se mantenga
+      await setPersistence(auth, browserLocalPersistence)
+      await signInWithEmailAndPassword(auth, email, password)
+    } catch (error) {
+      console.error('Error en login:', error)
+      throw error
+    }
   }
 
   async function logout() {
-    await signOut(auth)
+    try {
+      await signOut(auth)
+    } catch (error) {
+      console.error('Error en logout:', error)
+      throw error
+    }
   }
 
   return {
     currentUser,
     isAuthenticated,
+    isInitialized,
     email,
     login,
     logout,
