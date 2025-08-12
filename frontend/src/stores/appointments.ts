@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useTurnosStore } from './turnos'
+import emailjs from '@emailjs/browser'
+import { EMAILJS_CONFIG } from '../config/emailjs'
 
 export interface Appointment {
   id?: string
@@ -228,28 +230,25 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       
       console.log('[appointmentsStore] Reserva creada exitosamente con ID:', docRef.id)
 
-      // Enviar notificación por email al admin
+      // Enviar notificación por email al admin usando EmailJS
       try {
-        const response = await fetch('/api/notifications/admin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            nombreCliente: datosCliente.nombre,
-            apellidoCliente: datosCliente.apellido,
-            fecha: turnoData.fecha,
-            hora: turnoData.hora,
-            servicio: datosCliente.servicio,
-            dni: dni
-          })
-        })
-        
-        if (response.ok) {
-          console.log('✅ Notificación por email enviada al admin')
-        } else {
-          console.warn('⚠️ Error enviando notificación por email')
+        const templateParams = {
+          nombre: datosCliente.nombre,
+          apellido: datosCliente.apellido,
+          dni: dni,
+          fecha: new Date(turnoData.fecha).toLocaleDateString('es-ES'),
+          hora: turnoData.hora,
+          servicio: datosCliente.servicio
         }
+        
+        await emailjs.send(
+          EMAILJS_CONFIG.SERVICE_ID,
+          EMAILJS_CONFIG.TEMPLATE_ID,
+          templateParams,
+          EMAILJS_CONFIG.USER_ID
+        )
+        
+        console.log('✅ Notificación por email enviada al admin')
       } catch (error) {
         console.error('❌ Error enviando notificación por email:', error)
       }
