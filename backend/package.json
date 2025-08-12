@@ -11,6 +11,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@types/nodemailer": "^6.4.17",
     "cors": "^2.8.5",
     "descuentos-app": "file:..",
     "dotenv": "^16.3.1",
@@ -19,7 +20,8 @@
     "firebase-admin": "^12.0.0",
     "helmet": "^7.1.0",
     "joi": "^17.11.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "nodemailer": "^7.0.5"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

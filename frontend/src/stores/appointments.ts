@@ -228,6 +228,32 @@ export const useAppointmentsStore = defineStore('appointments', () => {
       
       console.log('[appointmentsStore] Reserva creada exitosamente con ID:', docRef.id)
 
+      // Enviar notificación por email al admin
+      try {
+        const response = await fetch('/api/notifications/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            nombreCliente: datosCliente.nombre,
+            apellidoCliente: datosCliente.apellido,
+            fecha: turnoData.fecha,
+            hora: turnoData.hora,
+            servicio: datosCliente.servicio,
+            dni: dni
+          })
+        })
+        
+        if (response.ok) {
+          console.log('✅ Notificación por email enviada al admin')
+        } else {
+          console.warn('⚠️ Error enviando notificación por email')
+        }
+      } catch (error) {
+        console.error('❌ Error enviando notificación por email:', error)
+      }
+
       // Marcar turno como no disponible
       await turnosStore.marcarNoDisponible(turnoId)
       

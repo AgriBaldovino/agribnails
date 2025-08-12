@@ -9,6 +9,7 @@ import descuentosRoutes from './routes/descuentos'
 import categoriasRoutes from './routes/categorias'
 import usuariosRoutes from './routes/usuarios'
 import clientsRoutes from './routes/clients'
+import notificationsRoutes from './routes/notifications'
 
 dotenv.config()
 
@@ -41,6 +42,7 @@ app.use('/api/descuentos', descuentosRoutes)
 app.use('/api/categorias', categoriasRoutes)
 app.use('/api/usuarios', usuariosRoutes)
 app.use('/api/clients', clientsRoutes)
+app.use('/api/notifications', notificationsRoutes)
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
